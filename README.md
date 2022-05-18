@@ -7,7 +7,7 @@ Python script to kickoff a few basic commands in a CTF environment. It requires 
 
 # Remember
 
-First, remember to change the version of Rustscan in your script.To grab Rustscan with docker do: docker pull rustscan/ruscan:vX.X.X
+First, remember to change the version of Rustscan in your script.To grab Rustscan with docker do: docker pull rustscan/rustcan:vX.X.X
 
 Link: https://github.com/RustScan/RustScan.git
 
