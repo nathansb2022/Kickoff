@@ -5,6 +5,7 @@
 #Specifically, I am running Rustscan:1.10.0 or change to accomodate.
 #To grab Rustscan with docker do: docker pull rustscan/ruscan:vx.x.x
 #Link: https://github.com/RustScan/RustScan.git
+#Feel free to edit the directory of your wordlist and file below.
 #Example Usage: python3 kickoff.py 10.10.10.10 8000 OR python3 kickoff.py 10.10.10.10
 
 import sys, os, pyfiglet
@@ -26,7 +27,7 @@ def kickoff(machine):
 	linuxCMD2 = "curl http://" + machine
 									#Change below to line up with your rustscan version
 	linuxCMD3 = "docker run -it --rm --name rustscan rustscan/rustscan:1.10.0 " + machine + " --ulimit 7500 -- -sC -sV -A -v"
-
+                                                   #Change to match your wordlist directory and file.
 	linuxCMD4 = "gobuster dir -u http://" + machine + " -w /usr/share/wordlists/dirb/big.txt -t 25 -x html,php,txt"
 
 	cmds = linuxCMD1, linuxCMD2, linuxCMD3, linuxCMD4
