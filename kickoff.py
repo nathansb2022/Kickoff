@@ -44,9 +44,9 @@ def kickoffwPort(machine, port):
 	linuxCMD1 = "curl http://" + machine + ":" + port + "/robots.txt"
 
 	linuxCMD2 = "curl http://" + machine + ":" + port
-
+                
 	linuxCMD3 = "docker run -it --rm --name rustscan rustscan/rustscan:1.10.0 " + machine + " --ulimit 7500 -- -sC -sV -A -v"
-
+                                                                    #Change to match your wordlist directory and file.
 	linuxCMD4 = "gobuster dir -u http://" + machine + ":" + port + " -w /usr/share/wordlists/dirb/big.txt -t 25 -x html,php,txt"
 
 	cmds = linuxCMD1, linuxCMD2, linuxCMD3, linuxCMD4
