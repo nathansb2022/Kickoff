@@ -11,6 +11,8 @@ First, remember to change the version of Rustscan in your script.To grab Rustsca
 
 Link: https://github.com/RustScan/RustScan.git
 
+Change command line Args to match your wordlist directory and file.
+
 # How to Use
 
 python3 kickoff.py 10.10.10.10 8000 OR python3 kickoff.py 10.10.10.10
