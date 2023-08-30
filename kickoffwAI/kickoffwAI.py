@@ -25,8 +25,8 @@
 #To grab espeak do: sudo apt install espeak xterm gobuster alsa-utils jackd2 python3-pyaudio
 #To grab python3 requirements: sudo pip3 install pyfiglet pyttsx3 openai pandas
 #Example Usage:
-#              "python3 kickoff.py 10.10.10.10"
-#               OR "python3 kickoff.py"
+#              "python3 kickoffwAI.py 10.10.10.10"
+#               OR "python3 kickoffwAI.py"
 #BAKE IN VARIABLES HERE
 #Line 64: put in api_key as environment variable
 #Line 277: put in how chatGPT should handle your scan results
