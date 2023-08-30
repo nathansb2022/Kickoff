@@ -274,7 +274,7 @@ def get_completion(prompt, model="gpt-4"):
 def checkGPTInput():
         # input what you would like to ask about your scan data
         gptInput = ""
-        #input = "Take the following input and generate a vulnerability report in markdown"
+        #gptInput = "Take the following input and generate a vulnerability report in markdown"
         if not gptInput:
                 gptInput = input("Please input how you would like your scan data to be reviewed by chatGPT: \n")
 
