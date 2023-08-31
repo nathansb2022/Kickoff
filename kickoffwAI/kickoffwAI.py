@@ -27,19 +27,22 @@
 #Example Usage:
 #              "python3 kickoffwAI.py 10.10.10.10"
 #               OR "python3 kickoffwAI.py"
-#BAKE IN VARIABLES HERE
-#Line 64: put in api_key as environment variable
-#Line 277: put in how chatGPT should handle your scan results
-
-
-import sys, os, pyfiglet, pyttsx3, openai, pandas as pd
+#BAKE IN VARIABLES Below
+import sys, os, pyfiglet, pyttsx3, openai, pandas as pd, re
 from colorama import Fore
 
 #Initialize basic variables
 secureHTTP = "443"
 regHTTP = "80"
+#These can be modified if needed to enhance audio
 starting = "Your analysis has started"
 finished = "Scanning is now complete"
+# input your Open AI API key here
+OKEY = "" # or add as env variable Below and uncomment
+#OKEY = os.environ.get('OKEY')
+# input what you would like to ask about your scan data from chatGPT
+gptInput = "" #Example Below
+#gptInput = "Take the following input and generate a vulnerability report in markdown"
 
 #Sound off
 def addAudioAlert(someString):
@@ -58,13 +61,11 @@ def art():
 	print("")
 
 # check if the api has been input
-def checKAPIKey():
-	# input your Open AI API key here
-	OKEY = ""
-	#OKEY = os.environ.get('OKEY')
+def checKAPIKey(OKEY):
 	if not OKEY:
 		OKEY = input("Please input the OpenAI API key: \n")
-
+		while OKEY == "":
+			OKEY = input("Please input the OpenAI API key: \n")
 		return OKEY
 	else:
 
@@ -76,10 +77,18 @@ def checkIp():
 	if not len(sys.argv) > 1:
 
 		machine = input('Please input the victim machine IP: ')
+		match = re.match(r"[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}", machine)
+		while machine == "" or bool(match) == False:
+			machine = input('Please input a valid victim machine IP: ')
+			match = re.match(r"[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}", machine)
 
 		return machine
 	else:
 		machine = sys.argv[1]
+		match = re.match(r"[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}", machine)
+		while bool(match) == False:
+			machine = input('Please input a valid victim machine IP: ')
+			match = re.match(r"[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}", machine)
 		return machine
 
 #Find what web server ports may be available
@@ -88,7 +97,7 @@ def rustPortScan(machine):
 									#Change below to line up with your rustscan version
 	portScanCMD = "docker run -it --rm --name rustscan rustscan/rustscan:2.1.1 -a " + machine + " --ulimit 7500 -- -sC -sV -A | tee portScan"
 
-	sed = "sleep 2; sed '1,9d' portScan > portScan.txt; rm -rf portScan; exit"#Close Me When Finished!!!
+	sed = "sleep 2; sed '1,30d' portScan > portScan.txt; rm -rf portScan; exit"#Close Me When Finished!!!
 
 	sedCMD= "xterm -e " + sed
 
@@ -100,21 +109,18 @@ def rustPortScan(machine):
 		os.system(x)
 		print("")
 
-#Assign listener a port number if the value is required.
+#Assign listener a port number
 def wsPort():
 	#Look above to gather your port information and find out whether to pursue HTTP or HTTPS
 	listener = input("Please input the web server port: ")
+	match = re.match(r"^([1-9][0-9]{0,3}|[1-5][0-9]{4}|6[0-4][0-9]{3}|65[0-4][0-9]{2}|655[0-2][0-9]|6553[0-5])$", listener)
+	while listener == "" or bool(match) == False:
+		listener = input("Please input a valid web server port: ")
+		match = re.match(r"^([1-9][0-9]{0,3}|[1-5][0-9]{4}|6[0-4][0-9]{3}|65[0-4][0-9]{2}|655[0-2][0-9]|6553[0-5])$", listener)
 	print('')
 	if listener == regHTTP:
 		listener = ""
 		return listener
-	elif not listener:
-		listener = input("Please input the web server port: ")
-		if listener == regHTTP:
-			listener = ""
-			return listener
-		else:
-			return listener
 	else:
 		return listener
 
@@ -162,9 +168,13 @@ def kickoff(machine):
 
 	pageScrapeCMD = "curl -s http://" + machine + " | tee webPageScrape.txt"
 
-	gobusterCMD = "gobuster dir -u http://" + machine + " -w /usr/share/wordlists/dirb/big.txt -t 25 -x html,php,txt | tee directBruteForce.txt"
+	gobusterCMD = "gobuster dir -u http://" + machine + " -w /usr/share/wordlists/dirb/big.txt -t 25 -x html,php,txt | tee directBruteForce"
 
-	cmds = robotsCMD, pageScrapeCMD, gobusterCMD, owaspzapCMD
+	sed = "sleep 2; sed '1,13d' directBruteForce > directBruteForce.txt; rm -rf directBruteForce; exit"#Close Me When Finished!!!
+
+	sedCMD= "xterm -e " + sed
+
+	cmds = robotsCMD, pageScrapeCMD, gobusterCMD, sedCMD, owaspzapCMD
 
 	for x in cmds:
 
@@ -182,9 +192,13 @@ def kickoffwPort(machine, port):
 
 	pageScrapeCMD = "curl -s http://" + machine + ":" + port + " | tee webPageScrape.txt"
 
-	gobusterCMD = "gobuster dir -u http://" + machine + ":" + port + " -w /usr/share/wordlists/dirb/big.txt -t 25 -x html,php,txt | tee directBruteForce.txt"
+	gobusterCMD = "gobuster dir -u http://" + machine + ":" + port + " -w /usr/share/wordlists/dirb/big.txt -t 25 -x html,php,txt | tee directBruteForce"
 
-	cmds = robotsCMD, pageScrapeCMD, gobusterCMD, owaspzapCMD
+	sed = "sleep 2; sed '1,13d' directBruteForce > directBruteForce.txt; rm -rf directBruteForce; exit"#Close Me When Finished!!!
+
+	sedCMD= "xterm -e " + sed
+
+	cmds = robotsCMD, pageScrapeCMD, gobusterCMD, sedCMD, owaspzapCMD
 
 	for x in cmds:
 
@@ -205,9 +219,13 @@ def kickoffwSSL(machine, port):
 
 	pageScrapeCMD = "curl -k -s https://" + machine + ":" + port + " | tee webPageScrape.txt"
 
-	gobusterCMD = "gobuster dir -k -u https://" + machine + ":" + port + " -w /usr/share/wordlists/dirb/big.txt -t 25 -x html,php,txt | tee directBruteForce.txt"
+	gobusterCMD = "gobuster dir -k -u https://" + machine + ":" + port + " -w /usr/share/wordlists/dirb/big.txt -t 25 -x html,php,txt | tee directBruteForce"
 
-	cmds = robotsCMD, pageScrapeCMD, gobusterCMD, owaspzapCMD
+	sed = "sleep 2; sed '1,13d' directBruteForce > directBruteForce.txt; rm -rf directBruteForce; exit"#Close Me When Finished!!!
+
+	sedCMD= "xterm -e " + sed
+
+	cmds = robotsCMD, pageScrapeCMD, gobusterCMD, sedCMD, owaspzapCMD
 
 	for x in cmds:
 
@@ -271,10 +289,7 @@ def get_completion(prompt, model="gpt-4"):
 	return response.choices[0].message["content"]
 
 # check for the beginning input to chat gpt
-def checkGPTInput():
-        # input what you would like to ask about your scan data
-        gptInput = ""
-        #gptInput = "Take the following input and generate a vulnerability report in markdown"
+def checkGPTInput(gptInput):
         if not gptInput:
                 gptInput = input("Please input how you would like your scan data to be reviewed by chatGPT: \n")
 
@@ -289,7 +304,7 @@ if __name__ == "__main__":
 	addAudioAlert(starting)
 	vic = checkIp()
 	# input put your api key below if not set above
-	OKEY = checKAPIKey()
+	OKEY = checKAPIKey(OKEY)
 	rustPortScan(vic)
 	listener = wsPort()
 	nonStandardSSL = wsPortHTTPS(listener)
@@ -309,7 +324,7 @@ if __name__ == "__main__":
 	#Send the results gathered from the text files to be summarized by chatGPT robot.txt,
 	#webPageScrape.txt, portScan.txt, zapoutput.txt, and directBruteForce.txt
 	addAudioAlert(finished)
-	gptInput = checkGPTInput()
+	gptInput = checkGPTInput(gptInput)
 	scanData = checkFile()
 	prompt = gptInput + scanData
 	gather(prompt, OKEY)

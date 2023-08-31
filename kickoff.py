@@ -20,7 +20,7 @@
 #              "python3 kickoff.py 10.10.10.10"
 #               OR "python3 kickoff.py"
 
-import sys, os, pyfiglet, pyttsx3
+import sys, os, pyfiglet, pyttsx3, re
 
 #Initialize variables
 secureHTTP = "443"
@@ -50,10 +50,18 @@ def checkIp():
 	if not len(sys.argv) > 1:
 
 		machine = input('Please input the victim machine IP: ')
+		match = re.match(r"[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}", machine)
+		while machine == "" or bool(match) == False:
+			machine = input('Please input a valid victim machine IP: ')
+			match = re.match(r"[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}", machine)
 
 		return machine
 	else:
 		machine = sys.argv[1]
+		match = re.match(r"[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}", machine)
+		while bool(match) == False:
+			machine = input('Please input a valid victim machine IP: ')
+			match = re.match(r"[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}", machine)
 		return machine
 
 #Find what web server ports may be available
@@ -78,17 +86,14 @@ def rustPortScan(machine):
 def wsPort():
 	#Look above to gather your port information and find out whether to pursue HTTP or HTTPS
 	listener = input("Please input the web server port: ")
+	match = re.match(r"^([1-9][0-9]{0,3}|[1-5][0-9]{4}|6[0-4][0-9]{3}|65[0-4][0-9]{2}|655[0-2][0-9]|6553[0-5])$", listener)
+	while listener == "" or bool(match) == False:
+		listener = input("Please input a valid web server port: ")
+		match = re.match(r"^([1-9][0-9]{0,3}|[1-5][0-9]{4}|6[0-4][0-9]{3}|65[0-4][0-9]{2}|655[0-2][0-9]|6553[0-5])$", listener)
 	print('')
 	if listener == regHTTP:
 		listener = ""
 		return listener
-	elif not listener:
-		listener = input("Please input the web server port: ")
-		if listener == regHTTP:
-			listener = ""
-			return listener
-		else:
-			return listener
 	else:
 		return listener
 
