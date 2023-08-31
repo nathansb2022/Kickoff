@@ -292,7 +292,8 @@ def get_completion(prompt, model="gpt-4"):
 def checkGPTInput(gptInput):
         if not gptInput:
                 gptInput = input("Please input how you would like your scan data to be reviewed by chatGPT: \n")
-
+				while gptInput == "":
+					gptInput = input("Please input how you would like your scan data to be reviewed by chatGPT: \n")
                 return gptInput
         else:
 
