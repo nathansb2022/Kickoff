@@ -290,14 +290,13 @@ def get_completion(prompt, model="gpt-4"):
 
 # check for the beginning input to chat gpt
 def checkGPTInput(gptInput):
-        if not gptInput:
-                gptInput = input("Please input how you would like your scan data to be reviewed by chatGPT: \n")
-				while gptInput == "":
-					gptInput = input("Please input how you would like your scan data to be reviewed by chatGPT: \n")
-                return gptInput
-        else:
-
-                return gptInput
+	if not gptInput:
+		gptInput = input("Please input how you would like your scan data to be reviewed by chatGPT: \n")
+		while gptInput == "":
+			gptInput = input("Please input how you would like your scan data to be reviewed by chatGPT: \n")
+		return gptInput
+	else:
+		return gptInput
 
 #Calling in the Main
 if __name__ == "__main__":
