@@ -6,7 +6,6 @@
 #Requires espeak, python3-pyaudio, alsa-utils, rustscan and OWASP Zap proxy in a container, and nmap.
 #For script to run correctly, I cloned with the github repository for ZAP proxy to /opt directory.
 #For script to run correctly, I used rustscan v 2.1.1
-#For Feroxbuster, directory depth is set to 1
 #The above can be changed to adapt to your environment
 #A port scan and some site recon starts the initial phases of scanning.
 #OWASP ZAP will be ran next. Lastly, a directory brute force will bring up the rear.
@@ -16,26 +15,31 @@
 #Next, the A.I. results will be output in red.
 #Sed command will kick off in another terminal window and exit when finished. This is clearing the portScan file of
 #unwanted lines. Additionally, this will be done with the directBruteForce file as well.
-#To grab feroxbuster with docker do: sudo docker pull epi052/feroxbuster:latest
+#Running chatGPT 4, can be changed below.
 #To grab Rustscan with docker do: sudo docker pull rustscan/ruscan:x.x.x
 #Rustscan Link: https://github.com/RustScan/RustScan.git
 #OWASP Zap Link: https://github.com/zaproxy/zaproxy.git
-#Feroxbuster Link: https://epi052.github.io/feroxbuster-docs/docs/
 #To grab zaproxy do: cd /opt; sudo git clone https://github.com/zaproxy/zaproxy.git
-#To grab espeak do: sudo apt install espeak alsa-utils jackd2 python3-pyaudio
-#To grab python3 requirements: sudo pip3 install pyfiglet pyttsx3 openai pandas
+#To grab espeak do: sudo apt install espeak alsa-utils jackd2 python3-pyaudio gobuster
+#To grab python3 requirements: sudo pip3 install pyfiglet pyttsx3 openai pandas tenacity
 #Example Usage:
 #              "python3 kickoffwAI.py 10.10.10.10"
 #               OR "python3 kickoffwAI.py"
 #BAKE IN VARIABLES Below
 import sys, os, pyfiglet, pyttsx3, openai, pandas as pd, re
 from colorama import Fore
+from tenacity import (
+    retry,
+    stop_after_attempt,
+    wait_random_exponential,
+)  # for exponential backoff
 
 # Initialize basic variables
 secureHTTP = "443"
 regHTTP = "80"
 # These can be modified if needed to enhance audio
 starting = "Your analysis has started"
+pAnalysis = "Port Analysis is complete"
 finished = "Scanning is now complete"
 # input your Open AI API key here
 OKEY = "" # or add as env variable Below and uncomment
@@ -43,9 +47,9 @@ OKEY = "" # or add as env variable Below and uncomment
 # input what you would like to ask about your scan data from chatGPT
 gptInput = "" #Example Below
 #gptInput = "Take the following input and generate a vulnerability report in markdown"
-# input what you like your directory depth set to:
-dirDepth = ""
-#dirDepth= "1"
+# input what model you would like to use
+flavorGPT = ""
+#flavorGPT = "gpt-4"
 
 #Sound off
 def addAudioAlert(someString):
@@ -100,7 +104,7 @@ def rustPortScan(machine):
 									#Change below to line up with your rustscan version
 	portScanCMD = "docker run -it --rm --name rustscan rustscan/rustscan:2.1.1 -a " + machine + " --ulimit 7500 -- -sC -sV -A | tee portScan"
 
-	sed = "sleep 2; sed '1,45d' portScan > portScan.txt; rm -rf portScan; exit"#Close Me When Finished!!!
+	sed = "sleep 2; sed '1,56d' portScan > portScan1;  head -n -17 portScan1 > portScan.txt; rm -rf portScan portScan1; exit"#Close Me When Finished!!!
 
 	sedCMD= "gnome-terminal -- bash -c " + sed
 
@@ -113,7 +117,8 @@ def rustPortScan(machine):
 		print("")
 
 #Assign listener a port number
-def wsPort():
+def wsPort(pAnalysis):
+	addAudioAlert(pAnalysis)
 	#Look above to gather your port information and find out whether to pursue HTTP or HTTPS
 	listener = input("Please input the web server port: ")
 	match = re.match(r"^([1-9][0-9]{0,3}|[1-5][0-9]{4}|6[0-4][0-9]{3}|65[0-4][0-9]{2}|655[0-2][0-9]|6553[0-5])$", listener)
@@ -129,8 +134,8 @@ def wsPort():
 
 #tell whether this is non-standard HTTPS
 def wsPortHTTPS(listener):
-	nonStandard = input("The above port, was it a non-standard HTTPS port? (y/n/q): ")
-
+	nonStandard = input("The above port, is it a non-standard HTTPS port? (y/n/q): ")
+	print('')
 	#Take user input and determine yes, no, quit, or undecided input
 	if nonStandard.lower() == 'y' or nonStandard.lower() == 'n' or nonStandard.lower() == 'q' or nonStandard.lower() == 'yes' or nonStandard.lower() == 'no' or nonStandard.lower() == 'quit':
 
@@ -161,21 +166,8 @@ def wsPortHTTPS(listener):
 
 		exit()
 
-# Get the directory depth for Feroxbuster if not baked in
-def checKDirDepth(dirDepth):
-	if not dirDepth:
-		dirDepth = input("Please input the directory depth for Feroxbuster (1-5): \n")
-		match = re.match(r"^([1-5])$", dirDepth)
-		while dirDepth == "" or bool(match) == False:
-			dirDepth = input("Please input the directory depth for Feroxbuster (1-5): \n")
-			match = re.match(r"^([1-5])$", dirDepth)
-		return dirDepth
-	else:
-
-		return dirDepth
-
 #Function to run kickoff script with IP only. This assuming that port 80 is open for http
-def kickoff(machine,depthNum):
+def kickoff(machine):
 	#List of Commands to run
 
 	owaspzapCMD = "python3 /opt/zaproxy/docker/zap-full-scan.py -t http://" + machine + " -s -r owaspzapscan.html | tee zapoutput.txt"
@@ -184,15 +176,13 @@ def kickoff(machine,depthNum):
 
 	pageScrapeCMD = "curl -s http://" + machine + " | tee webPageScrape.txt"
 
-	feroxCMD = "docker run --init -it epi052/feroxbuster -u http://" + machine + " -d " + depthNum + " -x js,html,php,txt > directBruteForce"
+	gobusterCMD = "gobuster dir -u http://" + machine + " -w /usr/share/wordlists/dirb/big.txt -t 25 -x html,php,txt | tee directBruteForce"
 
-	showDirCMD = "cat directBruteForce"
-
-	sed = "sleep 2; sed '1,15d' directBruteForce > directBruteForce.txt; rm -rf directBruteForce; exit"#Close Me When Finished!!!
+	sed = "sleep 2; sed '1,14d' directBruteForce > directBruteForce.txt; rm -rf directBruteForce; exit"#Close Me When Finished!!!
 
 	sedCMD= "gnome-terminal -- bash -c " + sed
 
-	cmds = robotsCMD, pageScrapeCMD, owaspzapCMD, feroxCMD, showDirCMD, sedCMD
+	cmds = robotsCMD, pageScrapeCMD, owaspzapCMD, gobusterCMD, sedCMD
 
 	for x in cmds:
 
@@ -201,7 +191,7 @@ def kickoff(machine,depthNum):
 		print("")
 
 #Function to run kickoff script with IP and Port
-def kickoffwPort(machine,port,depthNum):
+def kickoffwPort(machine,port):
 	#List of Commands to run
 
 	owaspzapCMD = "python3 /opt/zaproxy/docker/zap-full-scan.py -t http://" + machine + ":" + port + " -s -r owaspzapscan.html | tee zapoutput.txt"
@@ -210,15 +200,13 @@ def kickoffwPort(machine,port,depthNum):
 
 	pageScrapeCMD = "curl -s http://" + machine + ":" + port + " | tee webPageScrape.txt"
 
-	feroxCMD = "docker run --init -it epi052/feroxbuster -u http://" + machine + ":" + port + " -d " + depthNum + " -x js,html,php,txt > directBruteForce"
+	gobusterCMD = "gobuster dir -u http://" + machine + ":" + port + " -w /usr/share/wordlists/dirb/big.txt -t 25 -x html,php,txt | tee directBruteForce"
 
-	showDirCMD = "cat directBruteForce"
-
-	sed = "sleep 2; sed '1,15d' directBruteForce > directBruteForce.txt; rm -rf directBruteForce; exit"#Close Me When Finished!!!
+	sed = "sleep 2; sed '1,14d' directBruteForce > directBruteForce.txt; rm -rf directBruteForce; exit"#Close Me When Finished!!!
 
 	sedCMD= "gnome-terminal -- bash -c " + sed
 
-	cmds = robotsCMD, pageScrapeCMD, owaspzapCMD, feroxCMD, showDirCMD, sedCMD
+	cmds = robotsCMD, pageScrapeCMD, owaspzapCMD, gobusterCMD, sedCMD
 
 	for x in cmds:
 
@@ -227,7 +215,7 @@ def kickoffwPort(machine,port,depthNum):
 		print("")
 
 #Function to run kickoff script with with SSL mode
-def kickoffwSSL(machine,port,depthNum):
+def kickoffwSSL(machine,port):
 
 	print("Now running in SSL Mode!")
 
@@ -239,15 +227,13 @@ def kickoffwSSL(machine,port,depthNum):
 
 	pageScrapeCMD = "curl -k -s https://" + machine + ":" + port + " | tee webPageScrape.txt"
 
-	feroxCMD = "docker run --init -it epi052/feroxbuster -k -u https://" + machine + ":" + port + " -d " + depthNum + " -x js,html,php,txt > directBruteForce"
+	gobusterCMD = "gobuster dir -k -u https://" + machine + ":" + port + " -w /usr/share/wordlists/dirb/big.txt -t 25 -x html,php,txt | tee directBruteForce"
 
-	showDirCMD = "cat directBruteForce"
-
-	sed = "sleep 2; sed '1,15d' directBruteForce > directBruteForce.txt; rm -rf directBruteForce; exit"#Close Me When Finished!!!
+	sed = "sleep 2; sed '1,14d' directBruteForce > directBruteForce.txt; rm -rf directBruteForce; exit"#Close Me When Finished!!!
 
 	sedCMD= "gnome-terminal -- bash -c " + sed
 
-	cmds = robotsCMD, pageScrapeCMD, owaspzapCMD, feroxCMD, showDirCMD, sedCMD
+	cmds = robotsCMD, pageScrapeCMD, owaspzapCMD, gobusterCMD, sedCMD
 
 	for x in cmds:
 
@@ -290,21 +276,32 @@ def checkFile():
 			f.close()
 	return f1txt + f2txt + f3txt + f4txt + f5txt
 
+#Add in your model if you have not baked it in
+def checKAIModel(flavor):
+	if not flavor:
+		flavor = input("Please input the model of your AI, i.e. gpt-4 : \n")
+		while flavor == "":
+			flavor = input("Please input an actual AI Model, i.e. gpt-4 : \n")
+		return flavor
+	else:
+		return flavor
+
 #Add variables to get the response from chatGPT
-def gather(prompt, OKEY):
+def gather(prompt, OKEY, flavorGPT):
 	openai.api_key = OKEY
 	print('')
 	prompt = prompt
 	print(Fore.GREEN + "Please wait while we ask chatGPT about this host.\n")
-	response = get_completion(prompt)
+	response = get_completion(prompt, flavorGPT)
 	print(Fore.RED + response)
 
 #Reach out to chatGPT with the results from scanning
-def get_completion(prompt, model="gpt-4"):
+@retry(wait=wait_random_exponential(min=1, max=60), stop=stop_after_attempt(10))
+def get_completion(prompt, flavor):
 
 	messages = [{"role": "user", "content": prompt}]
 	response = openai.ChatCompletion.create(
-		model=model,
+		model=flavor,
 		messages=messages,
 		temperature=0,
 		)
@@ -329,28 +326,28 @@ if __name__ == "__main__":
 		# input put your api key below if not set above
 		OKEY = checKAPIKey(OKEY)
 		rustPortScan(vic)
-		listener = wsPort()
+		listener = wsPort(pAnalysis)
 		nonStandardSSL = wsPortHTTPS(listener)
-		depthNum = checKDirDepth(dirDepth)
 
 		#If no port was provided then run assuming webserver is hosted on port 80
 		if not listener:
 
-			kickoff(vic,depthNum)
+			kickoff(vic)
 		#Run in ssl mode whether it is standard or non-standard https port
 		elif listener == secureHTTP or nonStandardSSL == True:
 
-			kickoffwSSL(vic,listener,depthNum)
+			kickoffwSSL(vic,listener)
 		#Run assuming webserver is running on non-standard http port
 		else:
 
-			kickoffwPort(vic,listener,depthNum)
+			kickoffwPort(vic,listener)
 		#Send the results gathered from the text files to be summarized by chatGPT robot.txt,
 		#webPageScrape.txt, portScan.txt, zapoutput.txt, and directBruteForce.txt
 		addAudioAlert(finished)
+		flavorGPT = checKAIModel(flavorGPT)
 		gptInput = checkGPTInput(gptInput)
 		scanData = checkFile()
 		prompt = gptInput + scanData
-		gather(prompt, OKEY)
+		gather(prompt, OKEY, flavorGPT)
 	except Exception as err:
 		print(f"Unexpected {err=}, {type(err)=}")

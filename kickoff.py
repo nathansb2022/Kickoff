@@ -25,7 +25,9 @@ import sys, os, pyfiglet, pyttsx3, re
 #Initialize variables
 secureHTTP = "443"
 regHTTP = "80"
+#You are able to change the baked in variables below to your preference
 starting = "Your analysis has started"
+pAnalysis = "Port Analysis is now complete"
 finished = "Scanning is now complete"
 
 #Sound off
@@ -83,7 +85,8 @@ def rustPortScan(machine):
 		print("")
 
 #Assign listener a port
-def wsPort():
+def wsPort(pAnalysis):
+	addAudioAlert(pAnalysis)
 	#Look above to gather your port information and find out whether to pursue HTTP or HTTPS
 	listener = input("Please input the web server port: ")
 	match = re.match(r"^([1-9][0-9]{0,3}|[1-5][0-9]{4}|6[0-4][0-9]{3}|65[0-4][0-9]{2}|655[0-2][0-9]|6553[0-5])$", listener)
@@ -99,8 +102,8 @@ def wsPort():
 
 #tell whether this is non-standard HTTPS
 def wsPortHTTPS(listener):
-	nonStandard = input("The above port, was it a non-standard HTTPS port? (y/n/q): ")
-
+	nonStandard = input("The above port, is it a non-standard HTTPS port? (y/n/q): ")
+	print('')
 	#Take user input and determine yes, no, quit, or undecided input
 	if nonStandard.lower() == 'y' or nonStandard.lower() == 'n' or nonStandard.lower() == 'q' or nonStandard.lower() == 'yes' or nonStandard.lower() == 'no' or nonStandard.lower() == 'quit':
 
@@ -201,7 +204,7 @@ if __name__ == "__main__":
 	art()
 	vic = checkIp()
 	rustPortScan(vic)
-	listener = wsPort()
+	listener = wsPort(pAnalysis)
 	nonStandardSSL = wsPortHTTPS(listener)
 
 	#If no port was provided then run assuming webserver is hosted on port 80

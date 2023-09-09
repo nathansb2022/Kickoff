@@ -5,7 +5,7 @@ Stores contents in robots.txt, webPageScrape.txt, owaspzapscan.html, portScan.tx
 
 # IMPORTANT
 
-Completely enhanced this tool. Just added chatGPT to the mix as a helper with the scan results. See kickoffwAI folder for python3 script. Read comments in header of each py file. When prompted on how you would like your scan data to be reviewed by chatGPT, try "Take the following input and generate a vulnerability report in markdown". Furthermore, I have incorporated a version with Feroxbuster.
+Completely enhanced this tool. Just added chatGPT to the mix as a helper with the scan results. See kickoffwAI folder for python3 script. Read comments in header of the py file. When prompted on how you would like your scan data to be reviewed by chatGPT with model="gpt-4", try "Take the following input and generate a vulnerability report in markdown". Furthermore, I have incorporated a version with Feroxbuster (See kickoffwFerox folder).
 
 # Terminal Output
 
