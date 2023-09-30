@@ -44,13 +44,13 @@ pAnalysis = "Port Analysis is complete"
 finished = "Scanning is now complete"
 # input your Open AI API key here
 OKEY = "" # or add as env variable Below and uncomment
-OKEY = os.environ.get('OKEY')
+#OKEY = os.environ.get('OKEY')
 # input what you would like to ask about your scan data from chatGPT
 gptInput = "" #Example Below
-gptInput = "Provide the best path of exploitation from greatest to least given the information below. Be sure to write this as a vulnerability report in markdown with supporting web links if plausible. "
+#gptInput = "Provide the best path of exploitation from greatest to least given the information below. Be sure to write this as a vulnerability report in markdown with supporting web links if plausible. "
 # input what model you would like to use
 flavorGPT = ""
-flavorGPT = "gpt-4"
+#flavorGPT = "gpt-4"
 #Calculate Time
 def calculateTime(start):
 	end = time.time()
