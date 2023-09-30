@@ -5,7 +5,7 @@ Stores contents in robots.txt, webPageScrape.txt, owaspzapscan.html, portScan.tx
 
 # IMPORTANT
 
-Completely enhanced this tool. Just added chatGPT to the mix as a helper with the scan results. See kickoffwAI folder for python3 script. Read comments in header of the py file. When prompted on how you would like your scan data to be reviewed by chatGPT with model="gpt-4", try "Take the following input and generate a vulnerability report in markdown". Furthermore, I have incorporated a version with Feroxbuster (See kickoffwFerox folder).
+Completely enhanced this tool. Just added chatGPT to the mix as a helper with the scan results. See kickoffwAI folder for python3 script. Read comments in header of the py file that has required packages. When prompted on how you would like your scan data to be reviewed by chatGPT with model="gpt-4", try "Take the following input and generate a vulnerability report in markdown". Furthermore, I have incorporated a version with Feroxbuster (See kickoffwFerox folder).
 
 # Terminal Output
 
@@ -17,7 +17,7 @@ Sed command will kick off in another xterm window and exit when finished. This i
 
 First, remember to change the version of Rustscan in your script if needed. For script to run correctly, big.txt must be stored in directory: /usr/share/wordlists/dirb/ and ZAP proxy to be cloned with the github repository for ZAP proxy to /opt directory. If you choose different paths for files called, remember to change them in the script.
 
-Links to repos below:
+Links below:
 
 [Rustscan](https://github.com/RustScan/RustScan.git)
 
@@ -26,6 +26,8 @@ Links to repos below:
 [Gobuster](https://github.com/OJ/gobuster)
 
 [Feroxbuster](https://epi052.github.io/feroxbuster-docs/docs/)
+
+[ChatGPT](https://chat.openai.com/auth/login)
 
 # How to Use
 
